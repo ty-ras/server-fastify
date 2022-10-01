@@ -1,4 +1,5 @@
 import type * as ctx from "./context-types";
+import * as common from "./state-common";
 
 export const doGetStateFromContext = <T>(
   { req }: ctx.Context<T>,
@@ -14,7 +15,9 @@ export const doGetStateFromRequest = <T>(
     state = (req as ctx.FastifyRequestWithState<T>).__tyrasState;
   } else {
     if (!initialValue) {
-      throw new Error("State must be present in context");
+      throw new common.NoStatePresentWhenNeededError(
+        "State must be present in context",
+      );
     }
     state = initialValue.value;
     (req as ctx.FastifyRequestWithState<T>).__tyrasState = state;

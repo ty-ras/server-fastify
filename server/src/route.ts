@@ -20,7 +20,7 @@ export const createRoute = <TState>(
   const regExpAndHandler = prefix
     .atPrefix("", ...endpoints)
     .getRegExpAndHandler("");
-  // Return Koa middleware handler factory
+  // Return callback
   return async (req, res) => {
     await server.typicalServerFlow(
       {
