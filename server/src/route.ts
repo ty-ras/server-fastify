@@ -2,13 +2,13 @@ import * as ep from "@ty-ras/endpoint";
 import * as prefix from "@ty-ras/endpoint-prefix";
 import * as server from "@ty-ras/server";
 import type * as fastify from "fastify";
-import type * as ctx from "./context-types";
+import type * as ctx from "./context";
 import * as state from "./state-internal";
 import * as stream from "stream";
 
 // Using given various endpoints, create object which is able to handle the requests as Fastify route.
 export const createRoute = <TState>(
-  endpoints: Array<
+  endpoints: ReadonlyArray<
     ep.AppEndpoint<ctx.Context<TState>, Record<string, unknown>>
   >,
   initialState: TState,
@@ -45,7 +45,10 @@ export const createRoute = <TState>(
           // If we don't assign to res, we will become stuck
           res = res.code(statusCode);
         },
-        sendContent: async (_, content) => await res.send(content),
+        sendContent: async (_, content) =>
+          await res.send(
+            typeof content === "string" ? Buffer.from(content) : content,
+          ),
       },
     );
   };
