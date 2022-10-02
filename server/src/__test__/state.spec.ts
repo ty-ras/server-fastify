@@ -4,24 +4,24 @@
 import test from "ava";
 
 import * as spec from "../state";
-import * as ctx from "./context";
+import type * as ctx from "../context";
 
 test("Validate getStateFromContext works", (t) => {
   t.plan(1);
   t.deepEqual(
-    spec.getStateFromContext(ctx.dummyContext),
-    ctx.dummyContext.req.__tyrasState,
+    spec.getStateFromContext(dummyContext),
+    dummyContext.req.__tyrasState,
   );
 });
 
 test("Validate modifyState works", (t) => {
   t.plan(1);
-  const ctxCopy: typeof ctx.dummyContext = {
-    ...ctx.dummyContext,
+  const ctxCopy: typeof dummyContext = {
+    ...dummyContext,
     req: {
-      ...ctx.dummyContext.req,
+      ...dummyContext.req,
       __tyrasState: {
-        ...ctx.dummyContext.req.__tyrasState,
+        ...dummyContext.req.__tyrasState,
       },
     } as any,
   };
@@ -32,3 +32,15 @@ test("Validate modifyState works", (t) => {
   );
   t.deepEqual(ctxCopy.req, { __tyrasState: { property: "Modified" } });
 });
+
+export const dummyContext: ctx.Context<State> = {
+  req: {
+    __tyrasState: {
+      property: "Property",
+    },
+  },
+} as any;
+
+export interface State {
+  property: string;
+}

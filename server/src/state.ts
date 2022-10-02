@@ -1,4 +1,4 @@
-import type * as ctxTypes from "./context-types";
+import type * as ctxTypes from "./context";
 import type * as ctx from "./context";
 
 import type * as server from "@ty-ras/server";
