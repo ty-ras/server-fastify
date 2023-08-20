@@ -1,6 +1,6 @@
 import test from "ava";
 
-import * as spec from "../route";
+import * as spec from "../middleware";
 
 import * as fastify from "fastify";
 import * as testSupport from "@ty-ras/server-test-support";

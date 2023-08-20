@@ -6,6 +6,6 @@ export type {
   FastifyRequestWithState,
   HKTContext,
   IncomingMessage,
-} from "./context";
-export * from "./route";
+} from "./context.types";
+export * from "./middleware";
 export * from "./state";

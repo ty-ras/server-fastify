@@ -4,7 +4,7 @@
 import test from "ava";
 
 import * as spec from "../state";
-import type * as ctx from "../context";
+import type * as ctx from "../context.types";
 
 test("Validate getStateFromContext works", (t) => {
   t.plan(1);
