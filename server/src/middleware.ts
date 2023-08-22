@@ -9,6 +9,8 @@ import type * as fastify from "fastify";
 import type * as context from "./context.types";
 import * as internal from "./internal";
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+
 /**
  * Creates a new {@link FastifyRouteHandler} to serve the given TyRAS {@link ep.AppEndpoint}s.
  * @param endpoints The TyRAS {@link ep.AppEndpoint}s to serve through this Koa middleware.
@@ -16,24 +18,27 @@ import * as internal from "./internal";
  * @param events The optional {@link server.ServerEventHandler} callback to observe server events.
  * @returns The Koa middleware which will serve the given endpoints.
  */
-export const createMiddleware = <TStateInfo>(
-  endpoints: ReadonlyArray<ep.AppEndpoint<context.ServerContext, TStateInfo>>,
+export const createMiddleware = <
+  TServerContext extends context.ServerContext,
+  TStateInfo,
+>(
+  endpoints: ReadonlyArray<ep.AppEndpoint<TServerContext, TStateInfo>>,
   createState?: context.CreateState<TStateInfo>,
   events?: server.ServerEventHandler<
-    server.GetContext<context.ServerContext>,
+    server.GetContext<TServerContext>,
     TStateInfo
   >,
-): FastifyRouteHandler => {
+): FastifyRouteHandler<TServerContext> => {
   const flow = server.createTypicalServerFlow(
     endpoints,
     {
       ...internal.staticCallbacks,
       getState: ({ req }, stateInfo) =>
-        createState?.({ context: req, stateInfo }),
+        createState?.({ context: req as any, stateInfo }),
     },
     events,
   );
-  return async (req, res) => await flow({ req, res });
+  return async (req, res) => await flow({ req, res } as any);
 };
 
 /**
@@ -42,10 +47,15 @@ export const createMiddleware = <TStateInfo>(
  * @param middleware The callback created by {@link createMiddleware}.
  * @param options The options for {@link fastify.FastifyInstance.route} call.
  */
-export const registerRouteToFastifyInstance = (
-  instance: fastify.FastifyInstance,
-  middleware: FastifyRouteHandler,
-  options?: Omit<fastify.RouteOptions, "method" | "url" | "handler">,
+export const registerRouteToFastifyInstance = <
+  TServerContext extends context.ServerContext,
+>(
+  instance: fastify.FastifyInstance<GetFastifyServerType<TServerContext>>,
+  middleware: FastifyRouteHandler<TServerContext>,
+  options?: Omit<
+    fastify.RouteOptions<GetFastifyServerType<TServerContext>>,
+    "method" | "url" | "handler"
+  >,
 ) => {
   // We must pass body completely raw to our route, since only in the route we will know the actual body validation.
   // To achieve that, we remove the default content type parsers, and register universal parser, which simply passes the body as-is onwards to the route.
@@ -53,6 +63,10 @@ export const registerRouteToFastifyInstance = (
   instance.addContentTypeParser(/.*/, {}, (_, rawBody, done) => {
     done(null, rawBody);
   });
+  // Handler:
+  //  FastifyRequest<RouteGeneric, RawServer, RawRequest, SchemaCompiler, TypeProvider, ContextConfig, Logger>,
+  // Prehook:
+  // FastifyRequest<RouteGeneric, RawServer, RawRequest, SchemaCompiler, TypeProvider, ContextConfig, Logger>,
   instance.route({
     ...(options ?? {}),
     // Capture all methods
@@ -76,6 +90,20 @@ export const registerRouteToFastifyInstance = (
 /**
  * This is TyRAS-specific Fastify route handler type, forcing the return type to asynchronous `void`.
  */
-export type FastifyRouteHandler = (
-  ...params: Parameters<fastify.preHandlerAsyncHookHandler>
-) => Promise<void>;
+export type FastifyRouteHandler<TServerContext extends context.ServerContext> =
+  (
+    this: void,
+    request: fastify.FastifyRequest<
+      fastify.RouteGenericInterface,
+      GetFastifyServerType<TServerContext>
+    >,
+    reply: fastify.FastifyReply<GetFastifyServerType<TServerContext>>,
+  ) => Promise<void>;
+
+/**
+ * This is helper type to convert TyRAS {@link context.ServerContext} into fastify `RawServer` generic type argument.
+ */
+export type GetFastifyServerType<TServerContext extends context.ServerContext> =
+  TServerContext extends context.ServerContextGeneric<infer TServer>
+    ? TServer
+    : never;

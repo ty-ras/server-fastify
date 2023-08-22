@@ -6,6 +6,9 @@ import type * as server from "@ty-ras/server";
 import type * as ctx from "./context.types";
 
 import * as stream from "node:stream";
+import type * as http from "node:http";
+import type * as https from "node:https";
+import type * as http2 from "node:http2";
 
 /**
  * This object implements the {@link server.ServerFlowCallbacksWithoutState} functionality for Express servers.
@@ -30,3 +33,10 @@ export const staticCallbacks: server.ServerFlowCallbacksWithoutState<ctx.ServerC
         typeof content === "string" ? Buffer.from(content) : content,
       ),
   };
+
+/**
+ * This is internal helper type to represent server context which can have HTTP1 or HTTP2 requests and responses.
+ */
+export type ServerContextGenericHTTP1Or2 = ctx.ServerContextGeneric<
+  http.Server | https.Server | http2.Http2Server | http2.Http2SecureServer
+>;

@@ -11,7 +11,6 @@ import * as middleware from "./middleware";
 import * as http from "node:http";
 import * as https from "node:https";
 import * as http2 from "node:http2";
-import type * as tls from "node:tls";
 
 /**
  * Creates new non-secure HTTP1 {@link http.Server} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
@@ -20,10 +19,10 @@ import type * as tls from "node:tls";
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
+    ctx.HTTP1ServerContext,
     TStateInfo,
     TState,
-    fastify.FastifyHttpOptions<http.Server>,
-    false
+    fastify.FastifyHttpOptions<http.Server>
   > &
     HTTP1ServerOptions,
 ): http.Server;
@@ -35,10 +34,10 @@ export function createServer<TStateInfo, TState>(
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
+    ctx.HTTP1ServerContext,
     TStateInfo,
     TState,
-    fastify.FastifyHttpsOptions<https.Server>,
-    true
+    fastify.FastifyHttpsOptions<https.Server>
   > &
     HTTP1ServerOptions,
 ): https.Server;
@@ -51,10 +50,10 @@ export function createServer<TStateInfo, TState>(
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
+    ctx.HTTP2ServerContext,
     TStateInfo,
     TState,
-    Omit<fastify.FastifyHttp2Options<http2.Http2Server>, "http2">,
-    false
+    Omit<fastify.FastifyHttp2Options<http2.Http2Server>, "http2">
   > &
     HTTP2ServerOptions,
 ): http2.Http2Server;
@@ -67,10 +66,10 @@ export function createServer<TStateInfo, TState>(
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
+    ctx.HTTP2ServerContext,
     TStateInfo,
     TState,
-    Omit<fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>, "http2">,
-    true
+    Omit<fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>, "http2">
   > &
     HTTP2ServerOptions,
 ): http2.Http2SecureServer;
@@ -79,67 +78,67 @@ export function createServer<TStateInfo, TState>(
  * Creates new secure or non-secure HTTP1 or HTTP2 Node server serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
  * Please set `httpVersion` value of `opts` to `2` to enable HTTP2 protocol, otherwise HTTP1 server will be returned.
  * @param opts The {@link ServerCreationOptions} to use when creating server.
+ * @param opts.options Privately deconstructed variable.
+ * @param opts.endpoints Privately deconstructed variable.
+ * @param opts.createState Privately deconstructed variable.
+ * @param opts.events Privately deconstructed variable.
+ * @param opts.httpVersion Privately deconstructed variable.
  * @returns Secure or non-secure HTTP1 or HTTP2 Node server
  */
-export function createServer<TStateInfo, TState>(
-  opts:
-    | (ServerCreationOptions<
-        TStateInfo,
-        TState,
-        fastify.FastifyHttpOptions<http.Server>,
-        false
-      > &
-        HTTP1ServerOptions)
-    | (ServerCreationOptions<
-        TStateInfo,
-        TState,
-        fastify.FastifyHttpsOptions<https.Server>,
-        true
-      > &
-        HTTP1ServerOptions)
-    | (ServerCreationOptions<
-        TStateInfo,
-        TState,
-        Omit<fastify.FastifyHttp2Options<http2.Http2Server>, "http2">,
-        false
-      > &
-        HTTP2ServerOptions)
-    | (ServerCreationOptions<
-        TStateInfo,
-        TState,
-        Omit<
-          fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>,
-          "http2"
-        >,
-        true
-      > &
-        HTTP2ServerOptions),
-) {
-  let retVal;
-  if ("httpVersion" in opts && opts.httpVersion === 2) {
-    fastify.default();
-    const { options, secure, ...handlerOptions } = opts;
-    // eslint-disable-next-line sonarjs/no-use-of-empty-return-value
-    const httpHandler = createHandleHttpRequest2<TStateInfo, TState>(
-      handlerOptions,
-    );
-    if (isSecure(secure, options, 2)) {
-      retVal = http2.createSecureServer(options ?? {}, httpHandler);
-    } else {
-      retVal = http2.createServer(options ?? {}, httpHandler);
-    }
-  } else {
-    const { options, secure, ...handlerOptions } = opts;
-    const httpHandler = createHandleHttpRequest1<TStateInfo, TState>(
-      handlerOptions,
-    );
-    if (isSecure(secure, options, 1)) {
-      retVal = https.createServer(options ?? {}, httpHandler);
-    } else {
-      retVal = http.createServer(options ?? {}, httpHandler);
-    }
-  }
-  return retVal;
+export function createServer<TStateInfo, TState>({
+  options,
+  endpoints,
+  createState,
+  events,
+  httpVersion,
+}:
+  | (ServerCreationOptions<
+      ctx.HTTP1ServerContext,
+      TStateInfo,
+      TState,
+      fastify.FastifyHttpOptions<http.Server>
+    > &
+      HTTP1ServerOptions)
+  | (ServerCreationOptions<
+      ctx.HTTP1ServerContext,
+      TStateInfo,
+      TState,
+      fastify.FastifyHttpsOptions<https.Server>
+    > &
+      HTTP1ServerOptions)
+  | (ServerCreationOptions<
+      ctx.HTTP2ServerContext,
+      TStateInfo,
+      TState,
+      Omit<fastify.FastifyHttp2Options<http2.Http2Server>, "http2">
+    > &
+      HTTP2ServerOptions)
+  | (ServerCreationOptions<
+      ctx.HTTP2ServerContext,
+      TStateInfo,
+      TState,
+      Omit<fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>, "http2">
+    > &
+      HTTP2ServerOptions)):
+  | http.Server
+  | https.Server
+  | http2.Http2Server
+  | http2.Http2SecureServer {
+  const instance =
+    options === undefined
+      ? fastify.default()
+      : httpVersion === 2
+      ? // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+        fastify.default({ http2: true, ...options } as any)
+      : // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+        fastify.default(options as any);
+  middleware.registerRouteToFastifyInstance(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    instance as any,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    middleware.createMiddleware(endpoints as any, createState, events),
+  );
+  return instance.server;
 }
 
 /**
@@ -168,135 +167,30 @@ export type HTTP2ServerOptions = {
  * This interface contains options common for both HTTP 1 and 2 servers when creating them via {@link createServer}.
  */
 export interface ServerCreationOptions<
+  TServerContext extends { req: unknown },
   TStateInfo,
   TState,
   TOPtions,
-  TSecure extends boolean,
 > {
   /**
    * The TyRAS {@link ep.AppEndpoint}s to server via returned HTTP server.
    */
-  endpoints: ReadonlyArray<ep.AppEndpoint<ctx.ServerContext, TStateInfo>>;
+  endpoints: ReadonlyArray<ep.AppEndpoint<TServerContext, TStateInfo>>;
 
   /**
    * The callback to create endpoint-specific state objects.
    */
-  createState?: ctx.CreateState<TStateInfo> | undefined;
+  createState?: ctx.CreateStateGeneric<TStateInfo, TServerContext> | undefined;
 
   /**
    * The callback for tracking events occurred within the server.
    */
   events?:
-    | server.ServerEventHandler<server.GetContext<ctx.ServerContext>, TState>
+    | server.ServerEventHandler<server.GetContext<TServerContext>, TState>
     | undefined;
 
   /**
    * The further options for the HTTP server.
    */
   options?: TOPtions | undefined;
-
-  /**
-   * Set this to `true` explicitly if automatic detection of server being secure by {@link createServer} fails.
-   */
-  secure?: TSecure | undefined;
 }
-
-const secureHttp1OptionKeys: ReadonlyArray<keyof tls.TlsOptions> = [
-  "key",
-  "cert",
-  "pfx",
-  "passphrase",
-  "rejectUnauthorized",
-  "ciphers",
-  "ca",
-  "requestCert",
-  "secureContext",
-  "secureOptions",
-  "secureProtocol",
-  "sigalgs",
-  "ticketKeys",
-  "crl",
-  "clientCertEngine",
-  "dhparam",
-  "ecdhCurve",
-  "allowHalfOpen",
-  "handshakeTimeout",
-  "honorCipherOrder",
-  "keepAlive",
-  "keepAliveInitialDelay",
-  "maxVersion",
-  "minVersion",
-  "noDelay",
-  "pauseOnConnect",
-  "privateKeyEngine",
-  "privateKeyIdentifier",
-  "pskCallback",
-  "pskIdentityHint",
-  "sessionIdContext",
-  "sessionTimeout",
-  "ALPNProtocols",
-  "SNICallback",
-];
-
-const secureHttp2OptionKeys: ReadonlyArray<
-  "allowHTTP1" | "origins" | keyof tls.TlsOptions
-> = ["allowHTTP1", "origins", ...secureHttp1OptionKeys];
-
-const createHandleHttpRequest1 = <TStateInfo, TState>({
-  endpoints,
-  createState,
-  events,
-}: Pick<
-  ServerCreationOptions<TStateInfo, TState, never, never>,
-  "endpoints" | "createState" | "events"
->): HTTP1Or2Handler<http.IncomingMessage, http.ServerResponse> => {
-  return express
-    .default()
-    .disable("x-powered-by")
-    .use(middleware.createMiddleware(endpoints, createState, events));
-};
-
-// It looks like http2-express-bridge is not compatible with newer express versions.
-// Furthermore, looks like http2 support is coming to express only in 5.x, which is still in beta.
-// So for now,disable this.
-const createHandleHttpRequest2 = <TStateInfo, TState>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _: //   {
-  //   endpoints,
-  //   createState,
-  //   events,
-  // }:
-  Pick<
-    ServerCreationOptions<TStateInfo, TState, never, never>,
-    "endpoints" | "createState" | "events"
-  >,
-): HTTP1Or2Handler<http2.Http2ServerRequest, http2.Http2ServerResponse> => {
-  throw new Error(
-    "Unfortunately, express v4.x does not support HTTP protocol version 2, and couldn't find any workaround for that (http2-express-bridge didn't work).",
-  );
-  // return http2Express(express.default)
-  //   .disable("x-powered-by")
-  //   .use(
-  //     middleware.createMiddleware(endpoints, createState, events),
-  //     // The http2-express-bridge typings are not so great, so we gotta do this explicit cast.
-  //   ) as unknown as HTTP1Or2Handler<
-  //   http2.Http2ServerRequest,
-  //   http2.Http2ServerResponse
-  // >;
-};
-
-type HTTP1Or2Handler<TRequest, TResponse> = (
-  req: TRequest,
-  res: TResponse,
-) => void;
-
-const isSecure = (
-  secure: boolean | undefined,
-  options: object | undefined,
-  version: 1 | 2,
-) =>
-  secure ||
-  (options &&
-    (version === 1 ? secureHttp1OptionKeys : secureHttp2OptionKeys).some(
-      (propKey) => propKey in options,
-    ));
