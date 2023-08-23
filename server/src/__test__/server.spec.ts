@@ -15,39 +15,45 @@ const createServer: testSupport.CreateServer = (
   info,
   httpVersion,
   secure,
-) =>
-  httpVersion === 1
-    ? secure
-      ? spec.createServer({
-          endpoints,
-          ...getCreateState(info),
-          options: {
-            https: secureInfo,
-          },
-        })
-      : spec.createServer({ endpoints, ...getCreateState(info) })
-    : httpVersion === 2
-    ? secure
-      ? {
-          server: spec.createServer({
+) => {
+  const instance =
+    httpVersion === 1
+      ? secure
+        ? spec.createServer({
+            endpoints,
+            ...getCreateState(info),
+            options: {
+              https: secureInfo,
+            },
+          })
+        : spec.createServer({ endpoints, ...getCreateState(info) })
+      : httpVersion === 2
+      ? secure
+        ? spec.createServer({
             endpoints,
             ...getCreateState(info),
             httpVersion,
             options: {
               https: secureInfo,
             },
-          }),
-          secure,
-        }
-      : {
-          server: spec.createServer({
+          })
+        : spec.createServer({
             endpoints,
             ...getCreateState(info),
             httpVersion,
-          }),
-          secure,
-        }
-    : doThrow(`Invalid http version: ${httpVersion}`);
+          })
+      : doThrow(`Invalid http version: ${httpVersion}`);
+
+  return {
+    server: instance.server,
+    secure,
+    // instance.server instanceof https.Server ||
+    // (!!options && "https" in options),
+    customListen: async (host: string, port: number) => {
+      await instance.listen({ host, port });
+    },
+  };
+};
 
 const secureInfo = secure.generateKeyAndCert();
 const doThrow = (msg: string) => {

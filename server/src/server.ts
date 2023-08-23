@@ -13,9 +13,9 @@ import * as https from "node:https";
 import * as http2 from "node:http2";
 
 /**
- * Creates new non-secure HTTP1 {@link http.Server} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
+ * Creates new non-secure HTTP1 {@link fastify.FastifyInstance} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
  * @param opts The {@link ServerCreationOptions} to use when creating server.
- * @returns A new non-secure HTTP1 {@link http.Server}.
+ * @returns A new non-secure HTTP1 {@link fastify.FastifyInstance}.
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
@@ -25,12 +25,12 @@ export function createServer<TStateInfo, TState>(
     fastify.FastifyHttpOptions<http.Server>
   > &
     HTTP1ServerOptions,
-): http.Server;
+): fastify.FastifyInstance<http.Server>;
 
 /**
- * Creates new secure HTTP1 {@link https.Server} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
+ * Creates new secure HTTP1 {@link fastify.FastifyInstance} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
  * @param opts The {@link ServerCreationOptions} to use when creating server.
- * @returns A new secure HTTP1 {@link https.Server}.
+ * @returns A new secure HTTP1 {@link fastify.FastifyInstance}.
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
@@ -40,13 +40,13 @@ export function createServer<TStateInfo, TState>(
     fastify.FastifyHttpsOptions<https.Server>
   > &
     HTTP1ServerOptions,
-): https.Server;
+): fastify.FastifyInstance<https.Server>;
 
 /**
- * Creates new non-secure HTTP2 {@link http2.Http2Server} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
+ * Creates new non-secure HTTP2 {@link fastify.FastifyInstance} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
  * Please set `httpVersion` value of `opts` to `2` to use HTTP2 protocol.
  * @param opts The {@link ServerCreationOptions} to use when creating server.
- * @returns A new non-secure HTTP2 {@link http2.Http2Server}.
+ * @returns A new non-secure HTTP2 {@link fastify.FastifyInstance}.
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
@@ -56,13 +56,13 @@ export function createServer<TStateInfo, TState>(
     Omit<fastify.FastifyHttp2Options<http2.Http2Server>, "http2">
   > &
     HTTP2ServerOptions,
-): http2.Http2Server;
+): fastify.FastifyInstance<http2.Http2Server>;
 
 /**
- * Creates new secure HTTP2 {@link http2.Http2SecureServer} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
+ * Creates new secure HTTP2 {@link fastify.FastifyInstance} serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
  * Please set `httpVersion` value of `opts` to `2` to use HTTP2 protocol.
  * @param opts The {@link ServerCreationOptions} to use when creating server.
- * @returns A new secure HTTP2 {@link http2.Http2SecureServer}.
+ * @returns A new secure HTTP2 {@link fastify.FastifyInstance}.
  */
 export function createServer<TStateInfo, TState>(
   opts: ServerCreationOptions<
@@ -72,7 +72,7 @@ export function createServer<TStateInfo, TState>(
     Omit<fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>, "http2">
   > &
     HTTP2ServerOptions,
-): http2.Http2SecureServer;
+): fastify.FastifyInstance<http2.Http2SecureServer>;
 
 /**
  * Creates new secure or non-secure HTTP1 or HTTP2 Node server serving given TyRAS {@link ep.AppEndpoint}s with additional configuration via {@link ServerCreationOptions}.
@@ -120,10 +120,10 @@ export function createServer<TStateInfo, TState>({
       Omit<fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>, "http2">
     > &
       HTTP2ServerOptions)):
-  | http.Server
-  | https.Server
-  | http2.Http2Server
-  | http2.Http2SecureServer {
+  | fastify.FastifyInstance<http.Server>
+  | fastify.FastifyInstance<https.Server>
+  | fastify.FastifyInstance<http2.Http2Server>
+  | fastify.FastifyInstance<http2.Http2SecureServer> {
   const instance =
     options === undefined
       ? fastify.default()
@@ -138,7 +138,7 @@ export function createServer<TStateInfo, TState>({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     middleware.createMiddleware(endpoints as any, createState, events),
   );
-  return instance.server;
+  return instance;
 }
 
 /**
