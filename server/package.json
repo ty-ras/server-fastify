@@ -31,7 +31,7 @@
     }
   },
   "dependencies": {
-    "@ty-ras/server": "^2.1.1"
+    "@ty-ras/server": "^2.2.0"
   },
   "peerDependencies": {
     "fastify": "^4.21.0"

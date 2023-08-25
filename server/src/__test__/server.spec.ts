@@ -47,8 +47,6 @@ const createServer: testSupport.CreateServer = (
   return {
     server: instance.server,
     secure,
-    // instance.server instanceof https.Server ||
-    // (!!options && "https" in options),
     customListen: async (host: string, port: number) => {
       await instance.listen({ host, port });
     },

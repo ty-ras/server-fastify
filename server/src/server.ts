@@ -119,11 +119,7 @@ export function createServer<TStateInfo, TState>({
       TState,
       Omit<fastify.FastifyHttp2SecureOptions<http2.Http2SecureServer>, "http2">
     > &
-      HTTP2ServerOptions)):
-  | fastify.FastifyInstance<http.Server>
-  | fastify.FastifyInstance<https.Server>
-  | fastify.FastifyInstance<http2.Http2Server>
-  | fastify.FastifyInstance<http2.Http2SecureServer> {
+      HTTP2ServerOptions)): HttpServer {
   const instance =
     options === undefined
       ? fastify.default()
@@ -194,3 +190,11 @@ export interface ServerCreationOptions<
    */
   options?: TOPtions | undefined;
 }
+/**
+ * This type contains all the HTTP server types that can be created with TyRAS backend for Fastify servers.
+ */
+export type HttpServer =
+  | fastify.FastifyInstance<http.Server>
+  | fastify.FastifyInstance<https.Server>
+  | fastify.FastifyInstance<http2.Http2Server>
+  | fastify.FastifyInstance<http2.Http2SecureServer>;

@@ -21,13 +21,11 @@ import * as internal from "./internal";
 export const createMiddleware = <
   TServerContext extends context.ServerContext,
   TStateInfo,
+  TState,
 >(
   endpoints: ReadonlyArray<ep.AppEndpoint<TServerContext, TStateInfo>>,
   createState?: context.CreateState<TStateInfo>,
-  events?: server.ServerEventHandler<
-    server.GetContext<TServerContext>,
-    TStateInfo
-  >,
+  events?: server.ServerEventHandler<server.GetContext<TServerContext>, TState>,
 ): FastifyRouteHandler<TServerContext> => {
   const flow = server.createTypicalServerFlow(
     endpoints,
