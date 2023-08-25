@@ -1,6 +1,7 @@
+// Base TS config file for all other TS configs in repo.
 {
   "compilerOptions": {
-    "module": "es2022",
+    "module": "ESNext",
     "moduleResolution": "node",
     "lib": [
       "ES2022"
