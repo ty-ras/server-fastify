@@ -2,7 +2,6 @@
  * @file This file contains helper function to create Fastify middleware callback.
  */
 
-import * as ep from "@ty-ras/endpoint";
 import * as protocol from "@ty-ras/protocol";
 import * as server from "@ty-ras/server";
 import type * as fastify from "fastify";
@@ -23,7 +22,7 @@ export const createMiddleware = <
   TStateInfo,
   TState,
 >(
-  endpoints: ReadonlyArray<ep.AppEndpoint<TServerContext, TStateInfo>>,
+  endpoints: server.ServerEndpoints<TServerContext, TStateInfo>,
   createState?: context.CreateState<TStateInfo>,
   events?: server.ServerEventHandler<server.GetContext<TServerContext>, TState>,
 ): FastifyRouteHandler<TServerContext> => {
